@@ -1,7 +1,7 @@
 trigger AccountTrigger on Account (before insert, after insert) {
 
     System.debug('AccountTrigger ran ' + trigger.operationType);
-/*** Question 1
+    /*** Question 1
     * Account Trigger
     * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.
     * Trigger should only fire on insert. */
@@ -17,13 +17,22 @@ trigger AccountTrigger on Account (before insert, after insert) {
             * BONUS: Check if the shipping fields are empty before copying.
             * Trigger should only fire on insert.
             */
-            if(acc.ShippingAddress      == null){
-                acc.BillingStreet       = acc.ShippingStreet;
-                acc.BillingCity         = acc.ShippingCity;
-                acc.BillingState        = acc.ShippingState;
-                acc.BillingPostalCode   = acc.ShippingPostalCode;
-                acc.BillingCountry      = acc.ShippingCountry;
+            if (acc.ShippingStreet != null){
+                acc.BillingStreet = acc.ShippingStreet;
             }
+            if (acc.ShippingCity != null){
+                acc.BillingCity = acc.ShippingCity;
+            }
+            if (acc.ShippingState != null){
+                acc.BillingState = acc.ShippingState;                
+            }
+            if (acc.ShippingPostalCode != null){
+                acc.BillingPostalCode = acc.ShippingPostalCode;  
+            }
+            if (acc.ShippingCountry!= null){
+                acc.BillingCountry = acc.ShippingCountry;  
+            }            
+
             /*
             * Question 3
             * Account Trigger
@@ -34,13 +43,12 @@ trigger AccountTrigger on Account (before insert, after insert) {
                 acc.Website != null &&
                 acc.Fax     != null) {
                 acc.Rating  = 'Hot';
-                }                
-
+            }
         }
     }
     if (trigger.isAfter){
         if(Trigger.isInsert){
-                        /*
+            /*
             * Question 4
             * Account Trigger
             * When an account is inserted create a contact related to the account with the following default values:
@@ -48,18 +56,20 @@ trigger AccountTrigger on Account (before insert, after insert) {
             * Email = 'default@email.com'
             * Trigger should only fire on insert.
             */
-        //list of contacts; generate for loop trigger.new; insert account, associate account ID
-        List<Contact> conList = new List<Contact>();
-        for (Account newAcc : trigger.new) {
+            //list of contacts; generate for loop trigger.new; insert account, associate account ID
+            List<Contact> conList = new List<Contact>();
+            for (Account newAcc : trigger.new) {
 
-            Contact con     = new Contact();
-            con.LastName    = 'DefaultContact';
-            con.Email       = 'default@email.com';
-            con.AccountId   = newAcc.Id;
-            //add record(s) to list
-            conlist.add(con);
+                Contact con     = new Contact(
+                    LastName    = 'DefaultContact',
+                    Email       = 'default@email.com',
+                    AccountId   = newAcc.Id);
+                //add record(s) to list
+                conlist.add(con);
             }
-            Database.insert(conList, AccessLevel.USER_MODE);
+            System.debug('conList records: ' + conList);
+            //Database.insert(conList, AccessLevel.USER_MODE);
+            insert conList;
         }
-    }
+    }// not sure why the error is being produced using Database.insert. I must keep moving.
 }
