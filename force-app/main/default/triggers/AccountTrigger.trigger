@@ -1,6 +1,4 @@
 trigger AccountTrigger on Account (before insert, after insert) {
-
-    System.debug('AccountTrigger ran ' + trigger.operationType);
     /*** Question 1
     * Account Trigger
     * When an account is inserted change the account type to 'Prospect' if there is no value in the type field.

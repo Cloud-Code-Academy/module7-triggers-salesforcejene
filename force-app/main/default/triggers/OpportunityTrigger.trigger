@@ -1,11 +1,9 @@
-trigger OpportunityTrigger on Opportunity (before insert, before update, before delete, after delete) {
-    System.debug('Type of trigger that initiated the run is a(n): ' + trigger.operationType);
+trigger OpportunityTrigger on Opportunity (before insert, before update, before delete, after delete, after update) {
+    //trigger with logic using Switch statement
+    System.TriggerOperation opType = Trigger.operationType;
 
-    If(trigger.isBefore){
-        if (trigger.isInsert){
-            //placeholder.. may remove
-            System.debug('Before insert trigger ran');
-        }
+switch on opType {
+    when BEFORE_UPDATE {
         /*
         * Question 5
         * Opportunity Trigger
@@ -13,13 +11,46 @@ trigger OpportunityTrigger on Opportunity (before insert, before update, before 
         * Error Message: 'Opportunity amount must be greater than 5000'
         * Trigger should only fire on update.
         */
-        if (trigger.isUpdate){
-            for(Opportunity opp : trigger.new){
-                if(opp.Amount < 5000){
-                    opp.addError('Opportunity amount must be greater than 5000');
+        for(Opportunity opp : trigger.new){
+            if(opp.Amount < 5000){
+                opp.addError('Opportunity amount must be greater than 5000');
                 }
             }
-        }
+        
+        /*
+        * Question 7
+        * Opportunity Trigger
+        * When an opportunity is updated set the primary contact
+        * on the opportunity to the contact on the same account
+        * with the title of 'CEO'.
+        * Trigger should only fire on update.
+        */
+            //capture related account Ids
+            Set<Id> acctIds = New Set<Id>();
+
+            for (Opportunity opp : Trigger.new) {
+                acctIds.add(opp.AccountId); 
+            }
+            //find CEO contacts that will be stored as Primary Contact
+            Map<Id,Id> primaryContactMap = new Map<Id,Id>();
+
+            for (Contact con : [SELECT Id, AccountId
+                                FROM Contact
+                                WHERE Title = 'CEO'
+                                AND AccountId IN :acctIds
+                                WITH USER_MODE]){
+                primaryContactMap.put(con.AccountId, con.Id);
+            } 
+
+            System.debug(JSON.serializePretty('Serialized JSON records: ' + primaryContactMap));
+
+            for (Opportunity opp :Trigger.new) {
+                if(opp.AccountId != null && primaryContactMap.containsKey(opp.AccountId)){
+                    opp.Primary_Contact__c = primaryContactMap.get(opp.AccountId);
+                }   
+            }
+        } 
+    when BEFORE_DELETE {
         /*
         * Question 6
         * Opportunity Trigger
@@ -27,30 +58,26 @@ trigger OpportunityTrigger on Opportunity (before insert, before update, before 
         * Error Message: 'Cannot delete closed opportunity for a banking account that is won'
         * Trigger should only fire on delete.
         */
-        if (trigger.isDelete){  
-            Map<Id, Opportunity> deletedOpps = new Map<Id, Opportunity>([
-                        SELECT Id, StageName, AccountId, Account.Industry
-                        FROM Opportunity
-                        WHERE Id IN :trigger.oldMap.keySet()
-                        WITH USER_MODE
-                    ]);
-            System.debug('deletedOpps record: ' + deletedOpps);
+        Map<Id,Account> accountsWithOppsMap = new Map<Id,Account>([
+            SELECT Id, Industry
+            FROM Account
+            WHERE Id IN (
+                SELECT AccountId
+                FROM Opportunity
+                WHERE Id IN :Trigger.old)
+        ]);
+        System.debug( JSON.serializePretty('Serialized JSON:: ' + accountsWithOppsMap));
 
-            for (Opportunity opp : deletedOpps.values()){
-                If (opp.AccountId != null){
-                    if(opp.StageName == 'Closed Won' &&
-                        opp.Account != null &&
-                        opp.Account.Industry == 'Banking'){
+        for (Opportunity opp : Trigger.old){            
+            if(opp.StageName == 'Closed Won'){
+                    String industry = accountsWithOppsMap.get(opp.AccountId).Industry;
+                    if(Industry =='Banking'){
                         opp.addError('Cannot delete closed opportunity for a banking account that is won');
                     }
                 }
             }
         }
-        if (trigger.isAfter){
-            if (trigger.isDelete){
-                //placeholder
-                System.debug('An After Trigger ran');
-            }
+    when AFTER_UPDATE{        
         }
     }
 }

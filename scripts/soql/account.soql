@@ -3,4 +3,25 @@
 //     query text and running the command:
 //     SFDX: Execute SOQL Query with Currently Selected Text
 
-SELECT Id, Name FROM Account
+SELECT Id, Industry, Name,
+        (SELECT AccountId, Name
+        FROM Opportunities
+        WHERE AccountId ='001ak00000l8uOXAAY')
+    FROM Account
+    WHERE Id  = '001ak00000l8uOXAAY'
+
+
+
+SELECT Id, Title, Name  
+FROM Contact
+WHERE Title = 'CEO' AND AccountId IN (
+    SELECT AccountId
+    FROM Opportunity
+    WHERE Id IN ('006ak00000A88icAAB'))
+
+SELECT Name, Primary_Contact__c, Primary_Contact__r.FirstName, Primary_Contact__r.Title
+FROM Opportunity
+WITH SYSTEM_MODE
+
+SELECT Name, Primary_Contact__c
+FROM Opportunity
