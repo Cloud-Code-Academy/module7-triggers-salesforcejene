@@ -11,7 +11,7 @@ switch on opType {
         * Error Message: 'Opportunity amount must be greater than 5000'
         * Trigger should only fire on update.
         */
-        for(Opportunity opp : Trigger.new){
+        for (Opportunity opp : Trigger.new) {
             if (opp.Amount < 5000) {
                 opp.addError('Opportunity amount must be greater than 5000');
                 }
@@ -66,8 +66,8 @@ switch on opType {
                 WHERE Id IN :Trigger.old)
         ]);
         
-        for (Opportunity opp : Trigger.old){            
-            if(opp.StageName == 'Closed Won'){
+        for (Opportunity opp : Trigger.old) { 
+            if (opp.StageName == 'Closed Won') {
                     String industry = accountsWithOppsMap.get(opp.AccountId).Industry;
                     if(Industry =='Banking'){
                         opp.addError('Cannot delete closed opportunity for a banking account that is won');
