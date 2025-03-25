@@ -1,4 +1,4 @@
-trigger OpportunityTrigger on Opportunity (before insert, before update, before delete, after delete, after update) {
+Trigger OpportunityTrigger on Opportunity (before update, before delete) {
     //trigger with logic using Switch statement
     System.TriggerOperation opType = Trigger.operationType;
 
@@ -11,8 +11,8 @@ switch on opType {
         * Error Message: 'Opportunity amount must be greater than 5000'
         * Trigger should only fire on update.
         */
-        for(Opportunity opp : trigger.new){
-            if(opp.Amount < 5000){
+        for(Opportunity opp : Trigger.new){
+            if (opp.Amount < 5000) {
                 opp.addError('Opportunity amount must be greater than 5000');
                 }
             }
@@ -25,29 +25,28 @@ switch on opType {
         * with the title of 'CEO'.
         * Trigger should only fire on update.
         */
-            //capture related account Ids
+            //capture related account Idsof all updated Opportunities 
             Set<Id> acctIds = New Set<Id>();
 
             for (Opportunity opp : Trigger.new) {
                 acctIds.add(opp.AccountId); 
             }
-            //find CEO contacts that will be stored as Primary Contact
-            Map<Id,Id> primaryContactMap = new Map<Id,Id>();
+            //find CEO contacts that will be stored as Primary Contact            
+            Map <Id,Id> primaryContactMap = new Map <Id,Id>();
 
             for (Contact con : [SELECT Id, AccountId
                                 FROM Contact
                                 WHERE Title = 'CEO'
                                 AND AccountId IN :acctIds
-                                WITH USER_MODE]){
+                                WITH USER_MODE]) {
+
                 primaryContactMap.put(con.AccountId, con.Id);
-            } 
-
-            System.debug(JSON.serializePretty('Serialized JSON records: ' + primaryContactMap));
-
+            }
+            //Populate the CEO contact from related Acct
             for (Opportunity opp :Trigger.new) {
-                if(opp.AccountId != null && primaryContactMap.containsKey(opp.AccountId)){
+                if (opp.AccountId != null && primaryContactMap.containsKey(opp.AccountId)) {
                     opp.Primary_Contact__c = primaryContactMap.get(opp.AccountId);
-                }   
+                }
             }
         } 
     when BEFORE_DELETE {
@@ -66,8 +65,7 @@ switch on opType {
                 FROM Opportunity
                 WHERE Id IN :Trigger.old)
         ]);
-        System.debug( JSON.serializePretty('Serialized JSON:: ' + accountsWithOppsMap));
-
+        
         for (Opportunity opp : Trigger.old){            
             if(opp.StageName == 'Closed Won'){
                     String industry = accountsWithOppsMap.get(opp.AccountId).Industry;
@@ -76,8 +74,6 @@ switch on opType {
                     }
                 }
             }
-        }
-    when AFTER_UPDATE{        
         }
     }
 }
